@@ -22,7 +22,11 @@ func TestNewClient(t *testing.T) {
 			assert.Nil(t, err)
 		})
 
-		t.Run("should set client.RestConfig", func(t *testing.T) {
+		t.Run("should return the client", func(t *testing.T) {
+			assert.IsType(t, &kubi.Client{}, client)
+		})
+
+		t.Run("should set client.RestConfig according", func(t *testing.T) {
 			assert.Equal(t, client.RestConfig.Host, "https://0.0.0.0:46271")
 		})
 
@@ -57,14 +61,23 @@ func TestNewClient(t *testing.T) {
 			assert.FileExists(t, "/var/run/secrets/kubernetes.io/serviceaccount/token")
 			assert.FileExists(t, "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 
-			client, err := kubi.NewClient()
+			k8sEndpoint := fmt.Sprintf("https://%s:%s",
+				os.Getenv("KUBERNETES_SERVICE_HOST"),
+				os.Getenv("KUBERNETES_SERVICE_PORT"),
+			)
 
-			t.Run("shouldn't return an error", func(t *testing.T) {
-				assert.NotNil(t, err)
-			})
+			client, err := kubi.NewClient()
 
 			t.Run("should return the client", func(t *testing.T) {
 				assert.IsType(t, &kubi.Client{}, client)
+			})
+
+			t.Run("should set client.RestConfig according", func(t *testing.T) {
+				assert.Equal(t, client.RestConfig.Host, k8sEndpoint)
+			})
+
+			t.Run("shouldn't return an error", func(t *testing.T) {
+				assert.Nil(t, err)
 			})
 		})
 
@@ -76,6 +89,7 @@ func TestNewClient(t *testing.T) {
 
 			t.Run("should return an error", func(t *testing.T) {
 				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "without kubernetes access")
 			})
 
 			t.Run("shouldn't return the client", func(t *testing.T) {
