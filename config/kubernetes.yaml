@@ -35,6 +35,19 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: go-deps
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 500Mi
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -52,10 +65,17 @@ spec:
         app: maestro-k8s
     spec:
       serviceAccountName: maestro-k8s
+      volumes:
+      - name: go-deps
+        persistentVolumeClaim:
+          claimName: go-deps
       containers:
       - name: maestro-k8s
         image: maestro-k8s
         imagePullPolicy: Always
+        volumeMounts:
+          - name: go-deps
+            mountPath: /go
         resources:
           requests:
             memory: 512Mi
